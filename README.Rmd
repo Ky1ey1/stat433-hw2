@@ -1,0 +1,116 @@
+---
+title: "hw2"
+output: github_document
+date: '2022-10-11'
+---
+
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(nycflights13)
+library(stringr)
+flights
+
+colnames(flights)
+flights["dep_time"]
+```
+
+```{r}
+
+add = function(df, a){
+  
+  
+  for (x in 1:nrow(df)){
+    
+    
+    if  (str_length(df[x, a]) == 2 ) {df[x,a] = paste0("0", df[x,a])}
+    
+    else if (str_length(df[x, a]) == 1 ) {df[x,a] = paste0("00", df[x,a])}
+  
+    
+  }
+  
+  return(df)
+}
+
+flights$dep_time = as.character(flights$dep_time)
+
+flights = flights %>% 
+  drop_na()
+
+flights = add(flights, 4)
+
+
+```
+
+```{r}
+t1 = flights %>% 
+  mutate(time = dep_time) %>% 
+  drop_na() %>% 
+  separate(time, into = c("dep_hour", "dep_min"), sep = -2) %>% 
+  group_by(dep_hour) %>% 
+  summarise(mean_dep = mean(dep_delay, na.rm = T),
+            mean_arr = mean(arr_delay, na.rm = T),
+            sum_delay = mean_arr + mean_dep) %>% 
+  arrange(sum_delay) 
+
+ggplot(t1, aes(x = dep_hour, y = sum_delay)) +
+  geom_point()
+
+
+```
+# 4am have the least delay time
+
+
+```{r}
+t2 = flights %>% 
+  mutate(time = dep_time) %>% 
+  drop_na() %>% 
+  separate(time, into = c("dep_hour", "dep_min"), sep = -2) %>% 
+  filter(dep_hour == 4) %>% 
+  group_by(month) %>% 
+  summarise(n = n())
+
+
+ggplot(t2, aes(x = month, y = n)) +
+  geom_point() + 
+  ylim(0, 30)
+
+```
+#Does not depend on season
+
+```{r}
+
+
+flights %>% 
+  mutate(time = dep_time) %>% 
+  drop_na() %>% 
+  separate(time, into = c("dep_hour", "dep_min"), sep = -2) %>% 
+  left_join(weather) %>% 
+  group_by(dep_hour) %>% 
+  ggplot(aes(x= temp, y = dep_delay))+geom_smooth() + facet_wrap(~dep_hour)
+
+```
+#  In general, dep_delay incerases when dep hour incraeses (minor pattern)
+
+
+```{r}
+t4 = flights %>% 
+  mutate(time = dep_time) %>% 
+  drop_na() %>% 
+  separate(time, into = c("dep_hour", "dep_min"), sep = -2) %>% 
+  filter(dep_hour == 4) %>% 
+  group_by(flight) %>% 
+  summarise(n = n()) %>% 
+  arrange(desc(n))
+
+
+print(t4)
+
+
+
+```
+#flight 1431 tend to be the flight that has the least delay
